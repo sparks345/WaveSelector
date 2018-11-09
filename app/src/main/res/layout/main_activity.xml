@@ -25,6 +25,8 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent"
+        app:wave_playing_color_end_color="#ffff00"
+        app:wave_playing_color_start_color="#ff0000"
         tools:layout_editor_absoluteX="8dp"
         tools:layout_editor_absoluteY="227dp"/>
 

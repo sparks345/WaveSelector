@@ -8,11 +8,10 @@ import java.util.TimerTask;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import android.animation.ArgbEvaluator;
-import android.animation.ValueAnimator;
-import android.animation.ValueAnimator.AnimatorUpdateListener;
 import android.content.Context;
+import android.content.res.Resources;
+import android.content.res.TypedArray;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.support.annotation.Nullable;
@@ -42,7 +41,10 @@ public class WaveSelector extends View {
     // TODO 滑动轨道的灵敏度
     private static final int SCROLL_SENSITIVITY = 1;
 
-    private final ArgbEvaluator mArgbEvalutor;
+    private final ArgbEvaluator mArgbEvaluator;
+    // 波形播放段起止颜色
+    private final int mPlayingStartColor;
+    private final int mPlayingEndColor;
 
     // 缓存波形数据
     private ArrayList<Volume> mData = new ArrayList<>();
@@ -113,16 +115,6 @@ public class WaveSelector extends View {
     private final Paint mSelectPaint;
 //    private final ValueAnimator mValueAnimator;
 
-    // 当前波形渐变色
-    private int mCurrentPlayingColor;
-    private final AnimatorUpdateListener mColorUpdateListener = new AnimatorUpdateListener() {
-        @Override
-        public void onAnimationUpdate(ValueAnimator animation) {
-            mCurrentPlayingColor = (int) animation.getAnimatedValue();
-            Log.i(TAG, "color:" + mCurrentPlayingColor);
-        }
-    };
-
     /////////////////////////////////////////////////////////
     private static final int SCROLLING_VELOCITY_UNIT = 100;
     private static final float MIN_MOVE_DISTANCE = 20;
@@ -153,19 +145,35 @@ public class WaveSelector extends View {
         super(context, attrs);
         init();
 
+        final Resources res = context.getResources();
+        final TypedArray attributes = res.obtainAttributes(attrs, R.styleable.WaveSelector);
+
+
         mScroll = new Scroller(getContext());
 
         mWavePaint = new Paint();// 波形
-        mWavePaint.setColor(getResources().getColor(R.color.colorWave));
+        int waveColor = attributes.getColor(R.styleable.WaveSelector_wave_color, getResources().getColor(R.color.colorWave));
+        mWavePaint.setColor(waveColor);
 
         mWavePlayingPaint = new Paint();// 播放过的波形
         mWavePlayingPaint.setColor(getResources().getColor(R.color.colorWavePlayed));
 
         mSelectPaint = new Paint();// 选择线
-        mSelectPaint.setColor(getResources().getColor(R.color.colorSelectLine));
+        int selectLineColor = attributes.getColor(R.styleable.WaveSelector_wave_select_line_color, getResources().getColor(R.color.colorSelectLine));
+        mSelectPaint.setColor(selectLineColor);
         mSelectPaint.setStrokeWidth(2 * density);
 
-        mArgbEvalutor = new ArgbEvaluator();
+        mArgbEvaluator = new ArgbEvaluator();
+
+        // color.
+        mPlayingStartColor = attributes.getColor(R.styleable.WaveSelector_wave_playing_color_start_color, getResources().getColor(R.color.colorWavePlayed));
+        mPlayingEndColor = attributes.getColor(R.styleable.WaveSelector_wave_playing_color_end_color, getResources().getColor(R.color.colorWavePlayed));
+
+        // padding.
+        mWavePaddingTop = attributes.getInt(R.styleable.WaveSelector_wave_padding_top, (int) (20 * density));
+        mWavePaddingBottom = attributes.getInt(R.styleable.WaveSelector_wave_padding_bottom, (int) (30 * density));
+
+        attributes.recycle();
     }
 
     private void init() {
@@ -281,7 +289,8 @@ public class WaveSelector extends View {
             }
             mRectVolume.set(left, top, right, bottom);
             if (left >= mHighLightStartPos - mWaveSize && right <= mHighLightProgressPos + mWaveSize) {
-                mCurrentPlayingColor = getCurrentWaveColor((left - mHighLightStartPos) / (mHighLightEndPos - mHighLightStartPos));
+                // 当前波形条渐变色
+                int mCurrentPlayingColor = getCurrentWaveColor((left - mHighLightStartPos) / (mHighLightEndPos - mHighLightStartPos));
                 mWavePlayingPaint.setColor(mCurrentPlayingColor);
                 canvas.drawRoundRect(mRectVolume, corner, corner, mWavePlayingPaint);
             } else {
@@ -297,7 +306,7 @@ public class WaveSelector extends View {
 
     private int getCurrentWaveColor(float percent) {
         Log.d(TAG, "getCurrentWaveColor() called with: percent = [" + percent + "]");
-        return (int) mArgbEvalutor.evaluate(percent, Color.parseColor("#FF00FF00"), Color.parseColor("#FF0000FF"));
+        return (int) mArgbEvaluator.evaluate(percent, mPlayingStartColor, mPlayingEndColor);
     }
 
     /////////////////////////////////////////////////////////

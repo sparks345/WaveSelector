@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="WaveSelector">
+        <!--波形颜色-->
+        <attr name="wave_color" format="color|reference"/>
+        <!--波形播放起始点颜色-->
+        <attr name="wave_playing_color_start_color" format="color|reference"/>
+        <!--波形播放终止点颜色-->
+        <attr name="wave_playing_color_end_color" format="color|reference"/>
+        <!--波形选择中线颜色-->
+        <attr name="wave_select_line_color" format="color|reference"/>
+        <!--波形顶部间隙-->
+        <attr name="wave_padding_top" format="dimension"/>
+        <!--波形底部间隙-->
+        <attr name="wave_padding_bottom" format="dimension"/>
+    </declare-styleable>
+</resources>
