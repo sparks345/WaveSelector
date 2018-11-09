@@ -125,6 +125,7 @@ public class WaveSelector extends View {
 
     private boolean mIsDragging;
     private float mLastX;
+    private float mLastDownX;
     private int mDragDirection;
 
     /////////////////////////////////////////////////////////
@@ -304,8 +305,14 @@ public class WaveSelector extends View {
         canvas.drawLine(mFullWidth / 2, 0, mFullWidth / 2, mFullHeight, mSelectPaint);
     }
 
+    /**
+     * 通过起止色计算当前要绘制的波形色
+     *
+     * @param percent 进度百分比
+     * @return 颜色
+     */
     private int getCurrentWaveColor(float percent) {
-        Log.d(TAG, "getCurrentWaveColor() called with: percent = [" + percent + "]");
+//        Log.d(TAG, "getCurrentWaveColor() called with: percent = [" + percent + "]");
         return (int) mArgbEvaluator.evaluate(percent, mPlayingStartColor, mPlayingEndColor);
     }
 
@@ -346,15 +353,15 @@ public class WaveSelector extends View {
         isProgressing = true;
         timer.schedule(timerTask, 0, TIMER_TRIGGER);
 
-        post(new Runnable() {
-            @Override
-            public void run() {
-//                mValueAnimator.cancel();
-//                mValueAnimator.setDuration(mPlayDuration);
-//                mValueAnimator.getValues();
-//                mValueAnimator.start();
-            }
-        });
+//        post(new Runnable() {
+//            @Override
+//            public void run() {
+////                mValueAnimator.cancel();
+////                mValueAnimator.setDuration(mPlayDuration);
+////                mValueAnimator.getValues();
+////                mValueAnimator.start();
+//            }
+//        });
     }
 
     protected void clearHighlight() {
@@ -379,12 +386,12 @@ public class WaveSelector extends View {
             this.timer = null;
         }
 
-        post(new Runnable() {
-            @Override
-            public void run() {
-//                mValueAnimator.cancel();
-            }
-        });
+//        post(new Runnable() {
+//            @Override
+//            public void run() {
+////                mValueAnimator.cancel();
+//            }
+//        });
     }
 
     /////////////////////////////////////////////////////////
@@ -404,6 +411,7 @@ public class WaveSelector extends View {
                     mScroll.abortAnimation();
                 }
                 mLastX = event.getX();
+                mLastDownX = mLastX;
                 mIsDragging = true;
 
                 return true;
@@ -412,15 +420,18 @@ public class WaveSelector extends View {
                 float moveDiff = event.getX() - mLastX;
                 mCurrentLeft -= moveDiff;// 反向滚动
                 mLastX = event.getX();
-                if (moveDiff > MIN_MOVE_DISTANCE) {
+                if (moveDiff >= MIN_MOVE_DISTANCE) {
                     mDragDirection = Direction_RIGHT;
                 } else if (moveDiff < -MIN_MOVE_DISTANCE) {
                     mDragDirection = Direction_LEFT;
                 } else {
                     mDragDirection = Direction_UNKNOWN;
                 }
-                clearHighlight();
-                callbackScrolling();
+
+                if (Math.abs(mLastX - mLastDownX) > MIN_MOVE_DISTANCE) {
+                    clearHighlight();
+                    callbackScrolling();
+                }
                 break;
             case MotionEvent.ACTION_UP:
                 mCurrentLeft -= event.getX() - mLastX;// 反向滚动
@@ -523,7 +534,7 @@ public class WaveSelector extends View {
 
     private ConcurrentLinkedQueue<Volume> getCurrentPageData() {
         int index = (mCurrentLeft - mPaddingPix) / (mWaveSize + mWaveSpace);
-        Log.e(TAG, "left:" + mCurrentLeft + ", idx:" + index);
+        Log.v(TAG, "left:" + mCurrentLeft + ", idx:" + index);
         // 当前页的数量
         int pageMax = Math.min(mData.size(), mWavePageCount + 1);
         // 最后一页的开始数据index
@@ -594,6 +605,20 @@ public class WaveSelector extends View {
     public void setPlayDuration(int duration) {
         Log.d(TAG, "setPlayDuration() called with: duration = [" + duration + "]");
         mPlayDuration = duration;
+        if (isProgressing) {
+            int start = mPaddingPix;
+            mHighLightEndPos = Math.round(start + mConvertAdapter.getPixByTime(mPlayDuration));
+            Log.w(TAG, "setPlayDuration, already progressing, refresh mHighLightEndPos:" + mHighLightEndPos);
+        }
+    }
+
+    /**
+     * 最少选择时间，波形滑动值最小时长时会停住
+     *
+     * @param timeSpan 时长
+     */
+    public void setLimitedSelectTime(int timeSpan) {
+
     }
 
     /////////////////////////////////////////////////////////
