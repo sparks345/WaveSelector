@@ -14,9 +14,11 @@ import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.RectF;
+import android.os.SystemClock;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.InputDevice;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.View;
@@ -234,7 +236,7 @@ public class WaveSelector extends View {
         clearHighlight();
         mData.clear();
         mInited = false;
-        mScroll.setFinalX(0);
+//        mScroll.setFinalX(0);
         SizeConvertAdapter.dispose();
     }
 
@@ -318,6 +320,7 @@ public class WaveSelector extends View {
 
     /////////////////////////////////////////////////////////
     public void startHighLight() {
+        if (!mInited) return;
         if (mPlayDuration <= 0) return;
         int start = mPaddingPix;
         int end = Math.round(start + mConvertAdapter.getPixByTime(mPlayDuration));
@@ -569,16 +572,20 @@ public class WaveSelector extends View {
         if (ll == null) return;
 
 //        Log.v(TAG, "setData() called with: ll = [" + ll.subList(0, Math.min(ll.size(), 10)) + "]..." + ", mInited:" + mInited);
-        if (mInited) return;
+        if (mInited) {
+            Log.e(TAG, "setData(). already inited. ignore...");
+            return;
+        }
 
         mInited = true;
         for (int i = 0; i < ll.size(); i++) {
             mData.add(new Volume(ll.get(i)));
         }
 
+        invalidate();
+
         callOnReady();
 
-        postInvalidate();
     }
 
     /**
@@ -590,12 +597,46 @@ public class WaveSelector extends View {
         Log.d(TAG, "seekTo() called with: start = [" + start + "]");
         if (mInited && mIsOnPreDraw) {
             Log.d(TAG, "scrollTo... to:" + start);
+
+//            mCurrentLeft =  mScroll.getFinalX();
+//            mScroll.fling((int) mCurrentLeft, 0, 11, 0,
+//                    0, getMaxEndX(), 0, 0);
+//            mScroll.startScroll(mCurrentLeft, 0, (int) mConvertAdapter.getPixByTime(start) - mCurrentLeft, 0, 0);
+//            MotionEvent.obtain(0, System.currentTimeMillis(), MotionEvent.ACTION_SCROLL,
+//                           1, pointerProperties, pointerCoords, 0, 0, xPrecision, yPrecision, deviceId,
+//                           edgeFlags, inputDevice, flags);
+//               }
+            if (mVelocityTracker == null) {
+                setSimulateClick(this, 0, 0);
+            }
             mScroll.setFinalX((int) mConvertAdapter.getPixByTime(start));
         } else {
             mAutoSeekTo = start;
             Log.d(TAG, "seekTo later... to:" + start);
         }
     }
+
+    /**
+     * hack 方法，模拟一次点击，防止首次seek无效
+     *
+     * @param view v
+     * @param x    x
+     * @param y    y
+     */
+    private void setSimulateClick(View view, float x, float y) {
+        Log.d(TAG, "setSimulateClick() called with: view = [" + view + "], x = [" + x + "], y = [" + y + "]");
+        long downTime = SystemClock.uptimeMillis();
+        final MotionEvent downEvent = MotionEvent.obtain(downTime, downTime,
+                MotionEvent.ACTION_DOWN, x, y, 0);
+        downTime += 1;
+        final MotionEvent upEvent = MotionEvent.obtain(downTime, downTime,
+                MotionEvent.ACTION_UP, x, y, 0);
+        view.onTouchEvent(downEvent);
+        view.onTouchEvent(upEvent);
+        downEvent.recycle();
+        upEvent.recycle();
+    }
+
 
     /**
      * 设置截取时长
@@ -610,6 +651,10 @@ public class WaveSelector extends View {
             mHighLightEndPos = Math.round(start + mConvertAdapter.getPixByTime(mPlayDuration));
             Log.w(TAG, "setPlayDuration, already progressing, refresh mHighLightEndPos:" + mHighLightEndPos);
         }
+    }
+
+    public int getPlayDuration() {
+        return mDragDirection;
     }
 
     /**

@@ -44,8 +44,14 @@ public class MainActivity extends AppCompatActivity implements IWaveSelectorList
             public void run() {
                 mSelector.setPlayDuration(5000);
                 mSelector.setListener(MainActivity.this);
-                mSelector.seekTo(2000);
                 mSelector.setData(ll);
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        mSelector.seekTo(4000);
+                    }
+                }, 2000);
+
             }
         }, 1000);
 //        new Handler().postDelayed(new Runnable() {
