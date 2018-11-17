@@ -18,7 +18,6 @@ import android.os.SystemClock;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.view.InputDevice;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.View;
@@ -138,6 +137,8 @@ public class WaveSelector extends View {
     private Timer timer;
     private TimerTask timerTask;
     private static final int TIMER_TRIGGER = 200;
+    // 最少可选时长
+    private int mDefaultLimitSelectTime = 2000;
 
     /////////////////////////////////////////////////////////
     public WaveSelector(Context context) {
@@ -446,7 +447,7 @@ public class WaveSelector extends View {
                     mVelocityTracker.computeCurrentVelocity(SCROLLING_VELOCITY_UNIT);
                     int xVelocity = -(int) mVelocityTracker.getXVelocity();// 反向滚动
                     int maxEndX = getMaxEndX();
-                    int minStartX = 0;//mLeftPadding;// todo 头部被抹掉了2s
+                    int minStartX = 0;//mLeftPadding;// todo 头部被抹掉了2s, 181117 <--看不懂了，2s这是啥?
                     mScroll.forceFinished(true);
                     Log.e(TAG, "mCurrentLeft:" + mCurrentLeft + ", xVelocity:" + xVelocity);
                     mScroll.fling((int) mCurrentLeft, 0, xVelocity, 0,
@@ -548,6 +549,7 @@ public class WaveSelector extends View {
 
         // 最后一页开始的滚动位置
         mMaxScrollX = (int) ((mWaveSize + mWaveSpace) * lastPageIndex) + mPaddingPix;
+        mMaxScrollX = Math.max(0, mMaxScrollX - mConvertAdapter.getPixByTime(mDefaultLimitSelectTime));
 
         ConcurrentLinkedQueue<Volume> currentPageData = new ConcurrentLinkedQueue<>();
         List<Volume> subList = mData.subList(index, Math.min(index + pageMax, mData.size() - 1));
@@ -663,7 +665,8 @@ public class WaveSelector extends View {
      * @param timeSpan 时长
      */
     public void setLimitedSelectTime(int timeSpan) {
-
+        Log.d(TAG, "setLimitedSelectTime: " + timeSpan);
+        mDefaultLimitSelectTime = timeSpan;
     }
 
     /////////////////////////////////////////////////////////
