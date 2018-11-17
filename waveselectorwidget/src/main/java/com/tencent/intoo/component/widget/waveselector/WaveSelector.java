@@ -234,7 +234,7 @@ public class WaveSelector extends View {
      */
     public void dispose() {
         Log.i(TAG, "dispose().");
-        clearHighlight();
+        clearHighLight();
         mData.clear();
         mInited = false;
 //        mScroll.setFinalX(0);
@@ -330,6 +330,7 @@ public class WaveSelector extends View {
 
     public void startHighLight(float left, float end) {
         Log.w(TAG, "startHighLight. left:" + left + ", end:" + end);
+        if (!mInited) return;
         mHighLightEndPos = end;
         mHighLightStartPos = left;
         mHighLightProgressPos = left;
@@ -347,7 +348,7 @@ public class WaveSelector extends View {
                     //mHighLightProgressPos = mHighLightStartPos;
 
                     // 单次播放启用
-                    stopHighlight();
+                    stopHighLight();
                 }
 
                 postInvalidate();
@@ -356,28 +357,41 @@ public class WaveSelector extends View {
 
         isProgressing = true;
         timer.schedule(timerTask, 0, TIMER_TRIGGER);
-
-//        post(new Runnable() {
-//            @Override
-//            public void run() {
-////                mValueAnimator.cancel();
-////                mValueAnimator.setDuration(mPlayDuration);
-////                mValueAnimator.getValues();
-////                mValueAnimator.start();
-//            }
-//        });
     }
 
-    protected void clearHighlight() {
+    public void resumeHighLight() {
+        if (!mInited) return;
+        Log.d(TAG, "resumeHighLight() called");
+        float current = mHighLightProgressPos - mPaddingPix;
+        startHighLight();
+        seekHighLight(current);
+    }
+
+    private void seekHighLight(float seekPos) {
+        if (!mInited) return;
+        seekPos += mPaddingPix;
+        Log.i(TAG, "seekHighLight() ... pos:" + seekPos);
+        if (seekPos >= mHighLightStartPos && seekPos <= mHighLightEndPos) {
+            mHighLightProgressPos = seekPos;
+        }
+    }
+
+    public void seekHighLightToTime(int ts) {
+        if (!mInited) return;
+        Log.d(TAG, "seekHighLightToTime() called with: ts = [" + ts + "]");
+        seekHighLight(mConvertAdapter.getPixByTime(ts));
+    }
+
+    protected void clearHighLight() {
 //        mHighLightEndPos = 0;
 //        mHighLightStartPos = 0;
 //        mHighLightProgressPos = 0;
         mHighLightProgressPos = mHighLightStartPos;
 
-        stopHighlight();
+        stopHighLight();
     }
 
-    private void stopHighlight() {
+    public void stopHighLight() {
         isProgressing = false;
 
         if (this.timerTask != null) {
@@ -433,7 +447,7 @@ public class WaveSelector extends View {
                 }
 
                 if (Math.abs(mLastX - mLastDownX) > MIN_MOVE_DISTANCE) {
-                    clearHighlight();
+                    clearHighLight();
                     callbackScrolling();
                 }
                 break;
