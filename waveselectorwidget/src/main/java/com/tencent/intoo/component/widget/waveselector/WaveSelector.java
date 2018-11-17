@@ -73,7 +73,7 @@ public class WaveSelector extends View {
     /////////////////////////////////////////////////////////
     private VelocityTracker mVelocityTracker;
     private final Scroller mScroll;
-    private long mLastPageStart;
+    private long mLastPageStart;//相对pos
     private IWaveSelectorListener mListener = new IWaveSelectorListener() {
         @Override
         public void onChanging(long timeStart) {
@@ -130,7 +130,7 @@ public class WaveSelector extends View {
     private int mDragDirection;
 
     /////////////////////////////////////////////////////////
-    private float mHighLightEndPos;
+    private float mHighLightEndPos;//相对位置
     private float mHighLightStartPos;
     private float mHighLightProgressPos;
     private boolean isProgressing;
@@ -379,7 +379,7 @@ public class WaveSelector extends View {
     public void seekHighLightToTime(int ts) {
         if (!mInited) return;
         Log.d(TAG, "seekHighLightToTime() called with: ts = [" + ts + "]");
-        seekHighLight(mConvertAdapter.getPixByTime(ts));
+        seekHighLight(mConvertAdapter.getPixByTime(ts) - mLastPageStart);
     }
 
     protected void clearHighLight() {
