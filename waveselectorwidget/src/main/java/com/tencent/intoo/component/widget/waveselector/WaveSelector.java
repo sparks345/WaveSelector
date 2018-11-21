@@ -50,6 +50,7 @@ public class WaveSelector extends View {
     // 缓存波形数据
     private ArrayList<Volume> mData = new ArrayList<>();
     private int mPlayDuration;
+    private int mLastDuration = -1;
 
     private float density = getResources().getDisplayMetrics().density;
 
@@ -73,7 +74,7 @@ public class WaveSelector extends View {
     /////////////////////////////////////////////////////////
     private VelocityTracker mVelocityTracker;
     private final Scroller mScroll;
-    private long mLastPageStart;//相对pos
+    private long mLastPageStart = -1;//相对pos
     private IWaveSelectorListener mListener = new IWaveSelectorListener() {
         @Override
         public void onChanging(long timeStart) {
@@ -104,7 +105,7 @@ public class WaveSelector extends View {
 
     private boolean mInited;
     private boolean mIsOnPreDraw;
-    private int mAutoSeekTo;
+    private int mAutoSeekTo;// seek后界面还没ready，先保持在，后续onReady后还原seek
 
     // 最大滚动起始位置，防止滚出界面
     private int mLastAvailableLeft;
@@ -219,13 +220,18 @@ public class WaveSelector extends View {
 
     private void callOnReady() {
         if (mInited && mIsOnPreDraw) {
-            if (mAutoSeekTo > 0) {
-                seekTo(mAutoSeekTo);
-            }
+            post(new Runnable() {
+                @Override
+                public void run() {
+                    if (mAutoSeekTo > 0) {
+                        seekTo(mAutoSeekTo);
+                    }
 
-            if (mListener != null) {
-                mListener.onReady();
-            }
+                    if (mListener != null) {
+                        mListener.onReady();
+                    }
+                }
+            });
         }
     }
 
@@ -446,7 +452,7 @@ public class WaveSelector extends View {
                     mDragDirection = Direction_UNKNOWN;
                 }
 
-                if (Math.abs(mLastX - mLastDownX) > MIN_MOVE_DISTANCE) {
+                if (Math.abs(mLastX - mLastDownX) > MIN_MOVE_DISTANCE/* || mCurrentLeft <= MIN_MOVE_DISTANCE*/) {
                     clearHighLight();
                     callbackScrolling();
                 }
@@ -472,6 +478,9 @@ public class WaveSelector extends View {
 
                 }
 //                callbackScroll();
+                if (mCurrentLeft <= MIN_MOVE_DISTANCE) {
+                    callbackScroll();
+                }
                 mIsDragging = false;
                 break;
             case MotionEvent.ACTION_CANCEL:
@@ -534,7 +543,7 @@ public class WaveSelector extends View {
 
     private void callbackScroll() {
         Log.d(TAG, "callbackScroll() called" + " ... " + mCurrentLeft);
-        if (mListener != null && mLastPageStart != mCurrentLeft) {
+        if (mListener != null && mLastPageStart != mCurrentLeft || mCurrentLeft == 0) {// 0最左端，也需要触发onSelect，这里hack一下吧。。
             mLastPageStart = mCurrentLeft;
             long ts = mConvertAdapter.getTimeByPix(mCurrentLeft);
             mListener.onSelect(ts);
@@ -660,12 +669,18 @@ public class WaveSelector extends View {
      * @param duration 截取时长
      */
     public void setPlayDuration(int duration) {
-        Log.d(TAG, "setPlayDuration() called with: duration = [" + duration + "]");
+        boolean showLog = duration != mLastDuration;
+        if (showLog) {
+            Log.d(TAG, "setPlayDuration() called with: duration = [" + duration + "]");
+        }
+        mLastDuration = duration;
         mPlayDuration = duration;
         if (isProgressing) {
             int start = mPaddingPix;
             mHighLightEndPos = Math.round(start + mConvertAdapter.getPixByTime(mPlayDuration));
-            Log.w(TAG, "setPlayDuration, already progressing, refresh mHighLightEndPos:" + mHighLightEndPos);
+            if (showLog) {
+                Log.w(TAG, "setPlayDuration, already progressing, refresh mHighLightEndPos:" + mHighLightEndPos);
+            }
         }
     }
 
@@ -723,7 +738,7 @@ public class WaveSelector extends View {
         }
 
         public static void init(float pixPerSec) {
-            if (instance != null) throw new IllegalArgumentException("help already initialized.");
+            if (instance != null) Log.e(TAG, "help already initialized.");
             instance = new SizeConvertAdapter(pixPerSec);
         }
 
