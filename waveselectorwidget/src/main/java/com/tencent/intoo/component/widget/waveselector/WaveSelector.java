@@ -270,7 +270,7 @@ public class WaveSelector extends View {
     }
 
     private void doDraw(Canvas canvas) {
-        int offSet = (mCurrentLeft) % (mWaveSpace + mWaveSize);
+        int offSet = (mCurrentLeft - mPaddingPix) % (mWaveSpace + mWaveSize);
         mLastAvailableLeft = mCurrentLeft;
 
         ConcurrentLinkedQueue<Volume> careData = getCurrentPageData();
