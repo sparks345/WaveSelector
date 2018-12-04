@@ -379,6 +379,7 @@ public class WaveSelector extends View {
         Log.i(TAG, "seekHighLight() ... pos:" + seekPos);
         if (seekPos >= mHighLightStartPos && seekPos <= mHighLightEndPos) {
             mHighLightProgressPos = seekPos;
+            postInvalidate();
         }
     }
 
