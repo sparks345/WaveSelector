@@ -42,6 +42,9 @@ public class WaveSelector extends View {
     // TODO 滑动轨道的灵敏度
     private static final int SCROLL_SENSITIVITY = 1;
 
+    // 播放Android机型会有选择时间+1、-1来回抖动的现象，尝试优化一下这里
+    private boolean mSmoothScrollEnable = true;
+
     private final ArgbEvaluator mArgbEvaluator;
     // 波形播放段起止颜色
     private final int mPlayingStartColor;
@@ -62,8 +65,8 @@ public class WaveSelector extends View {
     private int mWavePageCount = mHalfWaveCount * 2;
     // 波形宽度，通过满屏时长和满屏波形个数换算,默认40s时长72个波形
     // 每个波形单元包括 一个间隔 + 一个波形
-    private int mWaveSize = 0;//(int) (density * 10);
-    private int mWaveSpace;
+    private float mWaveSize = 0;//(int) (density * 10);
+    private float mWaveSpace;
 
     private int mWavePaddingTop = (int) (20 * density);
     private int mWavePaddingBottom = (int) (30 * density);
@@ -75,6 +78,7 @@ public class WaveSelector extends View {
     private VelocityTracker mVelocityTracker;
     private final Scroller mScroll;
     private long mLastPageStart = -1;//相对pos
+    private long mLastScrollingPageStart = -1;//相对pos
     private IWaveSelectorListener mListener = new IWaveSelectorListener() {
         @Override
         public void onChanging(long timeStart) {
@@ -119,7 +123,7 @@ public class WaveSelector extends View {
 
     /////////////////////////////////////////////////////////
     private static final int SCROLLING_VELOCITY_UNIT = 100;
-    private static final float MIN_MOVE_DISTANCE = 20;
+    private static final float MIN_MOVE_DISTANCE = 1;
 
     private static final int Direction_UNKNOWN = 0;
     private static final int Direction_RIGHT = 2;
@@ -148,11 +152,13 @@ public class WaveSelector extends View {
 
     public WaveSelector(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
-        init();
 
         final Resources res = context.getResources();
         final TypedArray attributes = res.obtainAttributes(attrs, R.styleable.WaveSelector);
+        mFullWidthTrackDuration = attributes.getInt(R.styleable.WaveSelector_full_width_track_duration, (int) mFullWidthTrackDuration);
+        mHalfWaveCount = attributes.getInt(R.styleable.WaveSelector_half_wave_count, mHalfWaveCount);
 
+        init();
 
         mScroll = new Scroller(getContext());
 
@@ -201,7 +207,7 @@ public class WaveSelector extends View {
                 mFullHeight = WaveSelector.this.getHeight();
                 mPaddingPix = mFullWidth / 2;
 
-                mWaveSize = mFullWidth / mWavePageCount / 2;
+                mWaveSize = mFullWidth * 1.0f / mWavePageCount / 2;
                 mWaveSpace = mWaveSize;
 
                 mPIX_PER_SECOND = mFullWidth * 1.0f / mFullWidthTrackDuration;
@@ -270,7 +276,7 @@ public class WaveSelector extends View {
     }
 
     private void doDraw(Canvas canvas) {
-        int offSet = (mCurrentLeft - mPaddingPix) % (mWaveSpace + mWaveSize);
+        int offSet = (int) ((mCurrentLeft - mPaddingPix) % (mWaveSpace + mWaveSize));
         mLastAvailableLeft = mCurrentLeft;
 
         ConcurrentLinkedQueue<Volume> careData = getCurrentPageData();
@@ -546,6 +552,7 @@ public class WaveSelector extends View {
         Log.d(TAG, "callbackScroll() called" + " ... " + mCurrentLeft);
         if (mListener != null && mLastPageStart != mCurrentLeft || mCurrentLeft == 0) {// 0最左端，也需要触发onSelect，这里hack一下吧。。
             mLastPageStart = mCurrentLeft;
+            mLastScrollingPageStart = mCurrentLeft;
             long ts = mConvertAdapter.getTimeByPix(mCurrentLeft);
             mListener.onSelect(ts);
         }
@@ -553,20 +560,40 @@ public class WaveSelector extends View {
 
     private void callbackScrolling() {
         Log.d(TAG, "callbackScrolling() called");
-        if (mListener != null /*&& mLastPageStart != mCurrentLeft*/) {
+        if (mListener != null /*&& mLastPageStart != mCurrentLeft*/ && smoothScrollValid()) {
 //            mLastPageStart = mCurrentLeft;
             long ts = mConvertAdapter.getTimeByPix(mCurrentLeft);
             mListener.onChanging(ts);
         }
     }
 
+    private boolean smoothScrollValid() {
+        boolean ret = false;
+        if (mSmoothScrollEnable) {
+//            long tsLast = mConvertAdapter.getTimeByPix(mLastScrollingPageStart);
+//            long tsNow = mConvertAdapter.getTimeByPix(mCurrentLeft);
+//            Log.v(TAG, "N:" + tsNow + ", L:" + tsLast);
+            if (mDragDirection == Direction_LEFT) {
+                ret = mCurrentLeft >= mLastScrollingPageStart;
+            } else if (mDragDirection == Direction_RIGHT) {
+                ret = mCurrentLeft <= mLastScrollingPageStart;
+            } else {
+//                ret = true;
+            }
+        }
+
+        mLastScrollingPageStart = mCurrentLeft;
+
+        return ret;
+    }
+
     private ConcurrentLinkedQueue<Volume> getCurrentPageData() {
-        int index = (mCurrentLeft - mPaddingPix) / (mWaveSize + mWaveSpace);
+        int index = (int) ((mCurrentLeft - mPaddingPix) / (mWaveSize + mWaveSpace));
         Log.v(TAG, "left:" + mCurrentLeft + ", idx:" + index);
         // 当前页的数量
         int pageMax = Math.min(mData.size(), mWavePageCount + 1);
         // 最后一页的开始数据index
-        int lastPageIndex = mData.size() - pageMax + (mPaddingPix / (mWaveSize + mWaveSpace));
+        int lastPageIndex = (int) (mData.size() - pageMax + (mPaddingPix / (mWaveSize + mWaveSpace)));
 
         if (index < 0) index = 0;
         if (index > lastPageIndex) index = lastPageIndex;

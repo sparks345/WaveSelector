@@ -13,5 +13,9 @@
         <attr name="wave_padding_top" format="dimension"/>
         <!--波形底部间隙-->
         <attr name="wave_padding_bottom" format="dimension"/>
+        <!--满屏宽度映射的时长-->
+        <attr name="full_width_track_duration" format="integer"/>
+        <!--半屏对应的波形数-->
+        <attr name="half_wave_count" format="integer"/>
     </declare-styleable>
 </resources>

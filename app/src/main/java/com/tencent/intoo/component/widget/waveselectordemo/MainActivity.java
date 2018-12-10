@@ -24,6 +24,7 @@ public class MainActivity extends AppCompatActivity implements IWaveSelectorList
     private Button mBtnResume;
     private Button mBtnSeek;
     private TextView mTextView;
+    private TextView mTextScrollint;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,6 +45,7 @@ public class MainActivity extends AppCompatActivity implements IWaveSelectorList
         mBtnResume = (Button) findViewById(R.id.btn_resume);
         mBtnSeek = (Button) findViewById(R.id.btn_seek);
         mTextView = (TextView) findViewById(R.id.textView);
+        mTextScrollint = (TextView) findViewById(R.id.txt_scrolling);
 
         mBtnPause.setOnClickListener(this);
         mBtnStart.setOnClickListener(this);
@@ -84,7 +86,7 @@ public class MainActivity extends AppCompatActivity implements IWaveSelectorList
 
     @Override
     public void onChanging(long timeStart) {
-
+        mTextScrollint.setText(String.valueOf(timeStart));
     }
 
     @Override
