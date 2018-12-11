@@ -383,8 +383,9 @@ public class WaveSelector extends View {
         if (!mInited) return;
         seekPos += mPaddingPix;
         Log.i(TAG, "seekHighLight() ... pos:" + seekPos);
-        if (seekPos >= mHighLightStartPos && seekPos <= mHighLightEndPos) {
+        if (seekPos + 50 >= mHighLightStartPos && seekPos - 50 <= mHighLightEndPos) {// 50为允许的误差值，eg left720.0, start719.992 ...
             mHighLightProgressPos = seekPos;
+            Log.v(TAG, "................" + mHighLightProgressPos);
             postInvalidate();
         }
     }
@@ -486,7 +487,7 @@ public class WaveSelector extends View {
                 }
 //                callbackScroll();
                 if (mCurrentLeft <= MIN_MOVE_DISTANCE) {
-                    callbackScroll();
+//                    callbackScroll();// 这里首次会误触一次0
                 }
                 mIsDragging = false;
                 break;
@@ -501,8 +502,9 @@ public class WaveSelector extends View {
                 break;
         }
 
+        mCurrentLeft = Math.max(0, mCurrentLeft);
         postInvalidate();
-        Log.v(TAG, "onTouchEvent." + event.getAction() + " x:" + event.getX() + ", y:" + event.getY() + " ==> " + mCurrentLeft);
+//        Log.v(TAG, "onTouchEvent." + event.getAction() + " x:" + event.getX() + ", y:" + event.getY() + " ==> " + mCurrentLeft);
 
         return super.onTouchEvent(event);
     }
@@ -662,7 +664,7 @@ public class WaveSelector extends View {
             if (mVelocityTracker == null) {
                 setSimulateClick(this, 0, 0);
             }
-            mScroll.setFinalX((int) mConvertAdapter.getPixByTime(start));
+            mScroll.setFinalX(Math.round(mConvertAdapter.getPixByTime(start)));
         } else {
             mAutoSeekTo = start;
             Log.d(TAG, "seekTo later... to:" + start);

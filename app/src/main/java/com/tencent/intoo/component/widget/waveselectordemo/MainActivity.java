@@ -91,7 +91,7 @@ public class MainActivity extends AppCompatActivity implements IWaveSelectorList
 
     @Override
     public void onSelect(long timeStart) {
-        Log.v(TAG, "callback .. on select..");
+        Log.v(TAG, "callback .. on select.." + timeStart);
         mSelector.startHighLight();
     }
 
