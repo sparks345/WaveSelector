@@ -9,6 +9,8 @@
         <attr name="wave_playing_color_end_color" format="color|reference"/>
         <!--波形选择中线颜色-->
         <attr name="wave_select_line_color" format="color|reference"/>
+        <!--波形选择中线到最小时长时的颜色-->
+        <attr name="wave_select_line_on_limit_color" format="color|reference"/>
         <!--波形顶部间隙-->
         <attr name="wave_padding_top" format="dimension"/>
         <!--波形底部间隙-->
@@ -17,5 +19,7 @@
         <attr name="full_width_track_duration" format="integer"/>
         <!--半屏对应的波形数-->
         <attr name="half_wave_count" format="integer"/>
+        <!--滚动速率-->
+        <attr name="scrolling_velocity" format="integer"/>
     </declare-styleable>
 </resources>

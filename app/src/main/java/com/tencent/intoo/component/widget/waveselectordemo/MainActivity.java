@@ -101,6 +101,11 @@ public class MainActivity extends AppCompatActivity implements IWaveSelectorList
     }
 
     @Override
+    public void onLimit() {
+        Log.d(TAG, "callback .. on limit() called");
+    }
+
+    @Override
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.btn_pause:

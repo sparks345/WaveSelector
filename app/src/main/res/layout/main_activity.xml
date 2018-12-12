@@ -27,6 +27,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:wave_playing_color_end_color="#ffff00"
         app:wave_playing_color_start_color="#ff0000"
+        app:scrolling_velocity="500"
         tools:layout_editor_absoluteX="8dp"
         tools:layout_editor_absoluteY="227dp"/>
 

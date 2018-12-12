@@ -50,6 +50,11 @@ public class WaveSelector extends View {
     private final int mPlayingStartColor;
     private final int mPlayingEndColor;
 
+    // 选择线颜色
+    private final int mSelectLineColor;
+    // 滑动到尾部最少时长限制时选择线的颜色
+    private final int mSelectLineOnLimitColor;
+
     // 缓存波形数据
     private ArrayList<Volume> mData = new ArrayList<>();
     private int mPlayDuration;
@@ -61,6 +66,7 @@ public class WaveSelector extends View {
     private long mFullWidthTrackDuration = 40000;
     // 半屏波形个数
     private int mHalfWaveCount = 36;//36;
+    private int mScrollingVelocity = SCROLLING_VELOCITY_UNIT;
     // 满屏波形个数，左右对称，满屏波形数是两个半屏
     private int mWavePageCount = mHalfWaveCount * 2;
     // 波形宽度，通过满屏时长和满屏波形个数换算,默认40s时长72个波形
@@ -94,6 +100,11 @@ public class WaveSelector extends View {
         public void onReady() {
             Log.d(TAG, "onReady() called");
         }
+
+        @Override
+        public void onLimit() {
+            Log.d(TAG, "onLimit() called");
+        }
     };
 
     /////////////////////////////////////////////////////////
@@ -109,6 +120,7 @@ public class WaveSelector extends View {
 
     private boolean mInited;
     private boolean mIsOnPreDraw;
+    private boolean mIsLimiting = false;
     private int mAutoSeekTo;// seek后界面还没ready，先保持在，后续onReady后还原seek
 
     // 最大滚动起始位置，防止滚出界面
@@ -157,6 +169,7 @@ public class WaveSelector extends View {
         final TypedArray attributes = res.obtainAttributes(attrs, R.styleable.WaveSelector);
         mFullWidthTrackDuration = attributes.getInt(R.styleable.WaveSelector_full_width_track_duration, (int) mFullWidthTrackDuration);
         mHalfWaveCount = attributes.getInt(R.styleable.WaveSelector_half_wave_count, mHalfWaveCount);
+        mScrollingVelocity = attributes.getInt(R.styleable.WaveSelector_scrolling_velocity, SCROLLING_VELOCITY_UNIT);
 
         init();
 
@@ -170,8 +183,9 @@ public class WaveSelector extends View {
         mWavePlayingPaint.setColor(getResources().getColor(R.color.colorWavePlayed));
 
         mSelectPaint = new Paint();// 选择线
-        int selectLineColor = attributes.getColor(R.styleable.WaveSelector_wave_select_line_color, getResources().getColor(R.color.colorSelectLine));
-        mSelectPaint.setColor(selectLineColor);
+        mSelectLineColor = attributes.getColor(R.styleable.WaveSelector_wave_select_line_color, getResources().getColor(R.color.colorSelectLine));
+        mSelectLineOnLimitColor = attributes.getColor(R.styleable.WaveSelector_wave_select_line_on_limit_color, getResources().getColor(R.color.colorSelectLine));
+        mSelectPaint.setColor(mSelectLineColor);
         mSelectPaint.setStrokeWidth(2 * density);
 
         mArgbEvaluator = new ArgbEvaluator();
@@ -238,6 +252,16 @@ public class WaveSelector extends View {
                     }
                 }
             });
+        }
+    }
+
+    private void callOnLimit() {
+        Log.v(TAG, "callOnLimit() called");
+        mIsLimiting = true;
+        if (mInited && mIsOnPreDraw) {
+            if (mListener != null) {
+                mListener.onLimit();
+            }
         }
     }
 
@@ -317,6 +341,7 @@ public class WaveSelector extends View {
         }
 
         // draw select line.
+        mSelectPaint.setColor(mIsLimiting ? mSelectLineOnLimitColor : mSelectLineColor);
         canvas.drawLine(mFullWidth / 2, 0, mFullWidth / 2, mFullHeight, mSelectPaint);
     }
 
@@ -464,6 +489,11 @@ public class WaveSelector extends View {
                     clearHighLight();
                     callbackScrolling();
                 }
+
+                if (!isAvailed(mCurrentLeft)) {
+                    callOnLimit();
+                }
+
                 break;
             case MotionEvent.ACTION_UP:
                 mCurrentLeft -= event.getX() - mLastX;// 反向滚动
@@ -472,7 +502,7 @@ public class WaveSelector extends View {
                    mIsDragging = false;*/
 
                 if (mVelocityTracker != null) {
-                    mVelocityTracker.computeCurrentVelocity(SCROLLING_VELOCITY_UNIT);
+                    mVelocityTracker.computeCurrentVelocity(mScrollingVelocity);
                     int xVelocity = -(int) mVelocityTracker.getXVelocity();// 反向滚动
                     int maxEndX = getMaxEndX();
                     int minStartX = 0;//mLeftPadding;// todo 头部被抹掉了2s, 181117 <--看不懂了，2s这是啥?
@@ -531,6 +561,9 @@ public class WaveSelector extends View {
             }
             postInvalidate();
             mLastScrollEndTS = System.currentTimeMillis();
+
+            callbackScrolling();
+
         } else {
             int tmp = mScroll.getCurrX();
             if (mLastCurrX != tmp) {
@@ -552,6 +585,7 @@ public class WaveSelector extends View {
 
     private void callbackScroll() {
         Log.d(TAG, "callbackScroll() called" + " ... " + mCurrentLeft);
+        mIsLimiting = false;
         if (mListener != null && mLastPageStart != mCurrentLeft || mCurrentLeft == 0) {// 0最左端，也需要触发onSelect，这里hack一下吧。。
             mLastPageStart = mCurrentLeft;
             mLastScrollingPageStart = mCurrentLeft;
@@ -591,7 +625,7 @@ public class WaveSelector extends View {
 
     private ConcurrentLinkedQueue<Volume> getCurrentPageData() {
         int index = (int) ((mCurrentLeft - mPaddingPix) / (mWaveSize + mWaveSpace));
-        Log.v(TAG, "left:" + mCurrentLeft + ", idx:" + index);
+//        Log.v(TAG, "left:" + mCurrentLeft + ", idx:" + index);
         // 当前页的数量
         int pageMax = Math.min(mData.size(), mWavePageCount + 1);
         // 最后一页的开始数据index
@@ -735,6 +769,8 @@ public class WaveSelector extends View {
         void onSelect(long timeStart);
 
         void onReady();
+
+        void onLimit();
     }
 
     public void setListener(IWaveSelectorListener listener) {
