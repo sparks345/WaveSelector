@@ -18,3 +18,34 @@ you can modify color config in xml:
     app:wave_playing_color_end_color="#ffff00"
     app:wave_playing_color_start_color="#ff0000"/>
 ```
+
+more custom attributes:
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="WaveSelector">
+        <!--波形颜色-->
+        <attr name="wave_color" format="color|reference"/>
+        <!--波形播放起始点颜色-->
+        <attr name="wave_playing_color_start_color" format="color|reference"/>
+        <!--波形播放终止点颜色-->
+        <attr name="wave_playing_color_end_color" format="color|reference"/>
+        <!--波形选择中线颜色-->
+        <attr name="wave_select_line_color" format="color|reference"/>
+        <!--波形选择中线到最小时长时的颜色-->
+        <attr name="wave_select_line_on_limit_color" format="color|reference"/>
+        <!--波形顶部间隙-->
+        <attr name="wave_padding_top" format="dimension"/>
+        <!--波形底部间隙-->
+        <attr name="wave_padding_bottom" format="dimension"/>
+        <!--满屏宽度映射的时长-->
+        <attr name="full_width_track_duration" format="integer"/>
+        <!--半屏对应的波形数-->
+        <attr name="half_wave_count" format="integer"/>
+        <!--滚动速率-->
+        <attr name="scrolling_velocity" format="integer"/>
+    </declare-styleable>
+</resources>
+```
+
+You can view usage in ```MainActivity.java```
