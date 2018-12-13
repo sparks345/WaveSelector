@@ -195,8 +195,8 @@ public class WaveSelector extends View {
         mPlayingEndColor = attributes.getColor(R.styleable.WaveSelector_wave_playing_color_end_color, getResources().getColor(R.color.colorWavePlayed));
 
         // padding.
-        mWavePaddingTop = attributes.getInt(R.styleable.WaveSelector_wave_padding_top, (int) (20 * density));
-        mWavePaddingBottom = attributes.getInt(R.styleable.WaveSelector_wave_padding_bottom, (int) (30 * density));
+        mWavePaddingTop = (int) attributes.getDimension(R.styleable.WaveSelector_wave_padding_top, 20 * density);
+        mWavePaddingBottom = (int) attributes.getDimension(R.styleable.WaveSelector_wave_padding_bottom, 30 * density);
 
         attributes.recycle();
     }
@@ -455,7 +455,7 @@ public class WaveSelector extends View {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        Log.v(TAG, "onTouchEvent." + event.getAction() + " x:" + event.getX() + ", y:" + event.getY() + " --> " + mCurrentLeft);
+//        Log.v(TAG, "onTouchEvent." + event.getAction() + " x:" + event.getX() + ", y:" + event.getY() + " --> " + mCurrentLeft);
 
         if (mVelocityTracker == null) {
             mVelocityTracker = VelocityTracker.obtain();
@@ -490,7 +490,8 @@ public class WaveSelector extends View {
                     callbackScrolling();
                 }
 
-                if (!isAvailed(mCurrentLeft)) {
+//                if (!isAvailed(mCurrentLeft)) {
+                if (mMaxScrollX > 0 && mCurrentLeft > mMaxScrollX) {
                     callOnLimit();
                 }
 
@@ -595,7 +596,7 @@ public class WaveSelector extends View {
     }
 
     private void callbackScrolling() {
-        Log.d(TAG, "callbackScrolling() called");
+//        Log.v(TAG, "callbackScrolling() called");
         if (mListener != null /*&& mLastPageStart != mCurrentLeft*/ && smoothScrollValid()) {
 //            mLastPageStart = mCurrentLeft;
             long ts = mConvertAdapter.getTimeByPix(mCurrentLeft);
@@ -675,6 +676,28 @@ public class WaveSelector extends View {
 
         callOnReady();
 
+    }
+
+    /**
+     * 刷新波形的数据，不触发各种回调
+     *
+     * @param ll 数据
+     */
+    public void refreshData(List<Integer> ll) {
+        Log.d(TAG, "refreshData() called with: ll = [" + ll + "]");
+        if (ll == null) return;
+
+        if (!mInited) {
+            Log.e(TAG, "refreshData(). not inited. ignore...");
+            return;
+        }
+
+        mData.clear();
+        for (int i = 0; i < ll.size(); i++) {
+            mData.add(new Volume(ll.get(i)));
+        }
+
+        invalidate();
     }
 
     /**
