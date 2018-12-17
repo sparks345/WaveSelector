@@ -706,7 +706,7 @@ public class WaveSelector extends View {
      * @param start start
      */
     public void seekTo(int start) {
-        Log.d(TAG, "seekTo() called with: start = [" + start + "]");
+        Log.d(TAG, "seekTo() called with: start = [" + start + "] , form =[" + mCurrentLeft + "]");
         if (mInited && mIsOnPreDraw) {
             Log.d(TAG, "scrollTo... to:" + start);
 
@@ -721,7 +721,14 @@ public class WaveSelector extends View {
             if (mVelocityTracker == null) {
                 setSimulateClick(this, 0, 0);
             }
-            mScroll.setFinalX(Math.round(mConvertAdapter.getPixByTime(start)));
+
+            int lastCurrentX = mCurrentLeft;
+            int newCurrentX = Math.round(mConvertAdapter.getPixByTime(start));
+
+            mScroll.setFinalX(newCurrentX);
+            if (lastCurrentX == newCurrentX) {// 这种两次相同的场景得强制触发一次callbackScroll
+                callbackScroll();
+            }
         } else {
             mAutoSeekTo = start;
             Log.d(TAG, "seekTo later... to:" + start);
