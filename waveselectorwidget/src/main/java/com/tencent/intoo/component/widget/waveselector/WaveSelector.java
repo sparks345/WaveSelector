@@ -563,8 +563,10 @@ public class WaveSelector extends View {
             postInvalidate();
             mLastScrollEndTS = System.currentTimeMillis();
 
-            callbackScrolling();
-
+            int tmp = mScroll.getCurrX();
+            if (mLastCurrX != tmp) {
+                callbackScrolling();
+            }
         } else {
             int tmp = mScroll.getCurrX();
             if (mLastCurrX != tmp) {
@@ -706,7 +708,7 @@ public class WaveSelector extends View {
      * @param start start
      */
     public void seekTo(int start) {
-        Log.d(TAG, "seekTo() called with: start = [" + start + "] , form =[" + mCurrentLeft + "]");
+        Log.d(TAG, "seekTo() called with: start time = [" + start + "] , from pos = [" + mCurrentLeft + "]");
         if (mInited && mIsOnPreDraw) {
             Log.d(TAG, "scrollTo... to:" + start);
 
