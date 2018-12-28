@@ -156,6 +156,8 @@ public class WaveSelector extends View {
     private static final int TIMER_TRIGGER = 200;
     // 最少可选时长
     private int mDefaultLimitSelectTime = 2000;
+    // onSelect去重用
+    private long mLastCallBackScrollTime;
 
     /////////////////////////////////////////////////////////
     public WaveSelector(Context context) {
@@ -563,8 +565,7 @@ public class WaveSelector extends View {
             postInvalidate();
             mLastScrollEndTS = System.currentTimeMillis();
 
-            int tmp = mScroll.getCurrX();
-            if (mLastCurrX != tmp) {
+            if (mLastCurrX != tmp2) {
                 callbackScrolling();
             }
         } else {
@@ -589,11 +590,12 @@ public class WaveSelector extends View {
     private void callbackScroll() {
         Log.d(TAG, "callbackScroll() called" + " ... " + mCurrentLeft);
         mIsLimiting = false;
-        if (mListener != null && mLastPageStart != mCurrentLeft || mCurrentLeft == 0) {// 0最左端，也需要触发onSelect，这里hack一下吧。。
+        if (mListener != null && (mLastPageStart != mCurrentLeft || System.currentTimeMillis() - mLastCallBackScrollTime > 200) || mCurrentLeft == 0) {// 0最左端，也需要触发onSelect，这里hack一下吧。。
             mLastPageStart = mCurrentLeft;
             mLastScrollingPageStart = mCurrentLeft;
             long ts = mConvertAdapter.getTimeByPix(mCurrentLeft);
             mListener.onSelect(ts);
+            mLastCallBackScrollTime = System.currentTimeMillis();
         }
     }
 
