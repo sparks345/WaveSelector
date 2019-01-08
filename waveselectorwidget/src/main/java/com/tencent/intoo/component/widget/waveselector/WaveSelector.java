@@ -73,6 +73,8 @@ public class WaveSelector extends View {
     // 每个波形单元包括 一个间隔 + 一个波形
     private float mWaveSize = 0;//(int) (density * 10);
     private float mWaveSpace;
+    // 波形圆角尺寸
+    private float mWaveCorner = 2 * density;
 
     private int mWavePaddingTop = (int) (20 * density);
     private int mWavePaddingBottom = (int) (30 * density);
@@ -197,8 +199,11 @@ public class WaveSelector extends View {
         mPlayingEndColor = attributes.getColor(R.styleable.WaveSelector_wave_playing_color_end_color, getResources().getColor(R.color.colorWavePlayed));
 
         // padding.
-        mWavePaddingTop = (int) attributes.getDimension(R.styleable.WaveSelector_wave_padding_top, 20 * density);
-        mWavePaddingBottom = (int) attributes.getDimension(R.styleable.WaveSelector_wave_padding_bottom, 30 * density);
+        mWavePaddingTop = (int) attributes.getDimension(R.styleable.WaveSelector_wave_padding_top, mWavePaddingTop);
+        mWavePaddingBottom = (int) attributes.getDimension(R.styleable.WaveSelector_wave_padding_bottom, mWavePaddingBottom);
+
+        // corner.
+        mWaveCorner = attributes.getDimension(R.styleable.WaveSelector_wave_corner_size, mWaveCorner);
 
         attributes.recycle();
     }
@@ -324,7 +329,7 @@ public class WaveSelector extends View {
             float height = dt.percent * (mFullHeight - mWavePaddingTop - mWavePaddingBottom);
             float top = mFullHeight / 2 - height / 2;
             float bottom = mFullHeight / 2 + height / 2;
-            float corner = 2 * density;
+            float corner = mWaveCorner;
 
             if (left < 0) {
                 left = 0;

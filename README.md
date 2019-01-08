@@ -26,6 +26,8 @@ more custom attributes:
     <declare-styleable name="WaveSelector">
         <!--波形颜色-->
         <attr name="wave_color" format="color|reference"/>
+        <!--波形圆角尺寸-->
+        <attr name="wave_corner_size" format="dimension"/>
         <!--波形播放起始点颜色-->
         <attr name="wave_playing_color_start_color" format="color|reference"/>
         <!--波形播放终止点颜色-->
