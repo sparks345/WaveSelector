@@ -23,5 +23,7 @@
         <attr name="half_wave_count" format="integer"/>
         <!--滚动速率-->
         <attr name="scrolling_velocity" format="integer"/>
+        <!--结尾时长大于limit时自动循环播放-->
+        <attr name="wave_loop_on_limit" format="boolean"/>
     </declare-styleable>
 </resources>

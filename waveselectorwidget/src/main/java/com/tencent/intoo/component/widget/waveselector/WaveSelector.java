@@ -75,6 +75,8 @@ public class WaveSelector extends View {
     private float mWaveSpace;
     // 波形圆角尺寸
     private float mWaveCorner = 2 * density;
+    // duration 大于 limit 时，是否波形自动循环播放
+    private boolean mLoopOnLimit = false;
 
     private int mWavePaddingTop = (int) (20 * density);
     private int mWavePaddingBottom = (int) (30 * density);
@@ -204,6 +206,9 @@ public class WaveSelector extends View {
 
         // corner.
         mWaveCorner = attributes.getDimension(R.styleable.WaveSelector_wave_corner_size, mWaveCorner);
+
+        // loopOnLimit TODO
+        mLoopOnLimit = attributes.getBoolean(R.styleable.WaveSelector_wave_loop_on_limit, mLoopOnLimit);
 
         attributes.recycle();
     }
@@ -788,7 +793,7 @@ public class WaveSelector extends View {
     }
 
     public int getPlayDuration() {
-        return mDragDirection;
+        return mPlayDuration;
     }
 
     /**
