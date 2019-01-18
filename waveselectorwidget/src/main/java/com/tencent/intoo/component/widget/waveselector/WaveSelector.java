@@ -42,6 +42,8 @@ public class WaveSelector extends View {
     // TODO 滑动轨道的灵敏度
     private static final int SCROLL_SENSITIVITY = 1;
 
+    private static final ConcurrentLinkedQueue<Volume> EMPTY_QUEUE = new ConcurrentLinkedQueue<>();
+
     // 播放Android机型会有选择时间+1、-1来回抖动的现象，尝试优化一下这里
     private boolean mSmoothScrollEnable = true;
 
@@ -371,7 +373,7 @@ public class WaveSelector extends View {
     /////////////////////////////////////////////////////////
     public void startHighLight() {
         if (!mInited) return;
-        if (mPlayDuration <= 0) return;
+        if (mPlayDuration <= 0 || mConvertAdapter == null) return;
         int start = mPaddingPix;
         int end = Math.round(start + mConvertAdapter.getPixByTime(mPlayDuration));
         startHighLight(start, end);
@@ -379,7 +381,7 @@ public class WaveSelector extends View {
 
     public void startHighLight(float left, float end) {
         Log.w(TAG, "startHighLight. left:" + left + ", end:" + end);
-        if (!mInited) return;
+        if (!mInited || mConvertAdapter == null) return;
         mHighLightEndPos = end;
         mHighLightStartPos = left;
         mHighLightProgressPos = left;
@@ -428,7 +430,7 @@ public class WaveSelector extends View {
     }
 
     public void seekHighLightToTime(int ts) {
-        if (!mInited) return;
+        if (!mInited || mConvertAdapter == null) return;
         Log.d(TAG, "seekHighLightToTime() called with: ts = [" + ts + "]");
         seekHighLight(mConvertAdapter.getPixByTime(ts) - mLastPageStart);
     }
@@ -600,8 +602,7 @@ public class WaveSelector extends View {
     private void callbackScroll() {
         Log.d(TAG, "callbackScroll() called" + " ... " + mCurrentLeft);
         mIsLimiting = false;
-        if (mListener != null && (mLastPageStart != mCurrentLeft || System.currentTimeMillis() - mLastCallBackScrollTime > 200) || mCurrentLeft == 0) {// 0最左端，也需要触发onSelect，这里hack一下吧。。
-            mLastPageStart = mCurrentLeft;
+        if (mConvertAdapter != null && (mListener != null && (mLastPageStart != mCurrentLeft || System.currentTimeMillis() - mLastCallBackScrollTime > 200) || mCurrentLeft == 0)) {// 0最左端，也需要触发onSelect，这里hack一下吧。。            mLastPageStart = mCurrentLeft;
             mLastScrollingPageStart = mCurrentLeft;
             long ts = mConvertAdapter.getTimeByPix(mCurrentLeft);
             mListener.onSelect(ts);
@@ -611,7 +612,7 @@ public class WaveSelector extends View {
 
     private void callbackScrolling() {
 //        Log.v(TAG, "callbackScrolling() called");
-        if (mListener != null /*&& mLastPageStart != mCurrentLeft*/ && smoothScrollValid()) {
+        if (mConvertAdapter != null && mListener != null /*&& mLastPageStart != mCurrentLeft*/ && smoothScrollValid()) {
 //            mLastPageStart = mCurrentLeft;
             long ts = mConvertAdapter.getTimeByPix(mCurrentLeft);
             mListener.onChanging(ts);
@@ -639,6 +640,7 @@ public class WaveSelector extends View {
     }
 
     private ConcurrentLinkedQueue<Volume> getCurrentPageData() {
+        if (mConvertAdapter == null) return EMPTY_QUEUE;
         int index = (int) ((mCurrentLeft - mPaddingPix) / (mWaveSize + mWaveSpace));
 //        Log.v(TAG, "left:" + mCurrentLeft + ", idx:" + index);
         // 当前页的数量
@@ -783,7 +785,7 @@ public class WaveSelector extends View {
         }
         mLastDuration = duration;
         mPlayDuration = duration;
-        if (isProgressing) {
+        if (isProgressing && mConvertAdapter != null) {
             int start = mPaddingPix;
             mHighLightEndPos = Math.round(start + mConvertAdapter.getPixByTime(mPlayDuration));
             if (showLog) {
