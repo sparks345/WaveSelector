@@ -303,7 +303,7 @@ public class WaveSelector extends View {
             return;
         }
 
-        if (mMaxScrollX > 0 && !isAvailed(mCurrentLeft)/*x >= mMaxScrollX || x < 0*/) {
+        if (!isAvailed(mCurrentLeft)/*x >= mMaxScrollX || x < 0*/) {
             Log.e(TAG, "skip to. mMaxScrollX error." + "x:" + mCurrentLeft + ", max:" + mMaxScrollX);
             mCurrentLeft = mLastAvailableLeft;
         }
@@ -505,7 +505,7 @@ public class WaveSelector extends View {
                 }
 
 //                if (!isAvailed(mCurrentLeft)) {
-                if (mMaxScrollX > 0 && mCurrentLeft > mMaxScrollX) {
+                if (mInited && mCurrentLeft > mMaxScrollX) {
                     callOnLimit();
                 }
 
@@ -645,15 +645,20 @@ public class WaveSelector extends View {
 //        Log.v(TAG, "left:" + mCurrentLeft + ", idx:" + index);
         // 当前页的数量
         int pageMax = Math.min(mData.size(), mWavePageCount + 1);
+        int pageSize = mWavePageCount + 1;
         // 最后一页的开始数据index
-        int lastPageIndex = (int) (mData.size() - pageMax + (mPaddingPix / (mWaveSize + mWaveSpace)));
+//        int lastPageIndex = (int) (mData.size() - pageMax + (mPaddingPix / (mWaveSize + mWaveSpace)));
+        int lastPageIndex = Math.max(0, (int) (mData.size() - pageSize + (mPaddingPix / (mWaveSize + mWaveSpace))));
 
         if (index < 0) index = 0;
         if (index > lastPageIndex) index = lastPageIndex;
 
         // 最后一页开始的滚动位置
-        mMaxScrollX = (int) ((mWaveSize + mWaveSpace) * lastPageIndex) + mPaddingPix;
-        mMaxScrollX = Math.max(0, mMaxScrollX - mConvertAdapter.getPixByTime(mDefaultLimitSelectTime));
+        float limitPix = mConvertAdapter.getPixByTime(mDefaultLimitSelectTime);
+        int zz = (int) ((mWaveSize + mWaveSpace) * lastPageIndex) + mPaddingPix;
+        int yy = mData.size() < pageSize ? (int) (mData.size() * (mWaveSize + mWaveSpace) - limitPix) : Integer.MAX_VALUE;
+        int tmpMaxScrollX = (int) (Math.min(zz, yy) - limitPix);
+        mMaxScrollX = Math.max(0, tmpMaxScrollX);
 
         ConcurrentLinkedQueue<Volume> currentPageData = new ConcurrentLinkedQueue<>();
         List<Volume> subList = mData.subList(index, Math.min(index + pageMax, mData.size() - 1));
@@ -722,7 +727,7 @@ public class WaveSelector extends View {
      * @param start start
      */
     public void seekTo(int start) {
-        Log.d(TAG, "seekTo() called with: start time = [" + start + "] , from pos = [" + mCurrentLeft + "]");
+        Log.d(TAG, "seekTo() called with: start time = [" + start + "] , from pos = [" + mCurrentLeft + "], max= [" + mMaxScrollX + "]");
         if (mInited && mIsOnPreDraw) {
             Log.d(TAG, "scrollTo... to:" + start);
 
@@ -740,6 +745,10 @@ public class WaveSelector extends View {
 
             int lastCurrentX = mCurrentLeft;
             int newCurrentX = Math.round(mConvertAdapter.getPixByTime(start));
+
+            if (newCurrentX > mMaxScrollX) {
+                newCurrentX = (int) mMaxScrollX;
+            }
 
             mScroll.setFinalX(newCurrentX);
             if (lastCurrentX == newCurrentX) {// 这种两次相同的场景得强制触发一次callbackScroll

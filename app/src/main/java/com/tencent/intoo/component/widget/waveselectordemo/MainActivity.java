@@ -56,7 +56,8 @@ public class MainActivity extends AppCompatActivity implements IWaveSelectorList
 
     private void initData() {
         final ArrayList<Integer> ll = new ArrayList<>();
-        for (int i = 0; i < 200; i++) {
+//        for (int i = 0; i < 200; i++) {
+        for (int i = 0; i < 36; i++) {
             ll.add((int) (Math.random() * 65535));
         }
 
@@ -65,6 +66,7 @@ public class MainActivity extends AppCompatActivity implements IWaveSelectorList
             @Override
             public void run() {
                 mSelector.setPlayDuration(5000);
+//                mSelector.setLimitedSelectTime(18000);
                 mSelector.setListener(MainActivity.this);
                 mSelector.setData(ll);
                 new Handler().postDelayed(new Runnable() {
