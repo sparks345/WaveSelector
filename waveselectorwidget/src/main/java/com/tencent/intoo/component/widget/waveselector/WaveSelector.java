@@ -660,11 +660,11 @@ public class WaveSelector extends View {
         int tmpMaxScrollX = (int) (Math.min(zz, yy) - limitPix);
         mMaxScrollX = Math.max(0, tmpMaxScrollX);
 
-        ConcurrentLinkedQueue<Volume> currentPageData = new ConcurrentLinkedQueue<>();
-        List<Volume> subList = mData.subList(index, Math.min(index + pageMax, mData.size() - 1));
-        currentPageData.addAll(subList);
+        int to = Math.min(index + pageMax, Math.max(mData.size() - 1, 0));
+        int from = Math.min(index, to);
+        List<Volume> subList = mData.subList(from, to);
 
-        return currentPageData;
+        return new ConcurrentLinkedQueue<>(subList);
     }
 
     boolean isAvailed(float currentX) {
